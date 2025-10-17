@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protótipo - Lançamentos Manuais de Bonificação</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Fundo cinza claro */
+        }
+        .sidebar {
+            transition: width 0.3s ease;
+        }
+        .sidebar-link.active {
+            background-color: #3b82f6; /* Azul */
+            color: white;
+        }
+        .sidebar-link.active i {
+            color: white;
+        }
+        .drag-area {
+            border: 2px dashed #d1d5db;
+        }
+        .drag-area.active {
+            border-color: #3b82f6;
+        }
+        .hidden-view {
+            display: none;
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar bg-gray-800 text-white w-64 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition duration-200 ease-in-out">
+        <a href="#" class="text-white flex items-center space-x-2 px-4">
+            <i class="fas fa-rocket text-2xl"></i>
+            <span class="text-2xl font-extrabold">Impulso</span>
+        </a>
+
+        <nav>
+            <a href="#" id="nav-upload" class="sidebar-link active flex items-center space-x-3 py-3 px-4 rounded-lg transition duration-150 hover:bg-gray-700">
+                <i class="fas fa-upload text-gray-400"></i>
+                <span>Novo Lançamento</span>
+            </a>
+            <a href="#" id="nav-history" class="sidebar-link flex items-center space-x-3 py-3 px-4 rounded-lg transition duration-150 hover:bg-gray-700">
+                <i class="fas fa-history text-gray-400"></i>
+                <span>Histórico</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Conteúdo Principal -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <header class="bg-white shadow-sm p-4">
+            <h1 id="header-title" class="text-2xl font-bold text-gray-800">Lançamento Manual de Bonificação</h1>
+        </header>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
+            <!-- Tela de Upload -->
+            <div id="upload-view">
+                <div id="upload-form-container">
+                    <div class="bg-white p-8 rounded-2xl shadow-lg max-w-4xl mx-auto">
+                        <div class="space-y-6">
+                            <div>
+                                <label for="campaign-code" class="block text-sm font-medium text-gray-700 mb-1">Código da Campanha</label>
+                                <input type="text" id="campaign-code" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: OMNI_2025_C15">
+                            </div>
+                            <div>
+                                <label for="campaign-description" class="block text-sm font-medium text-gray-700 mb-1">Descrição da Campanha</label>
+                                <textarea id="campaign-description" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Descreva o objetivo e as regras da campanha."></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Arquivo de Bonificação</label>
+                                <div id="drag-area" class="drag-area flex justify-center items-center w-full p-8 bg-gray-50 rounded-lg">
+                                    <div class="text-center">
+                                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                                        <p class="text-gray-600">Arraste e solte o arquivo .CSV aqui</p>
+                                        <p class="text-sm text-gray-500 my-2">ou</p>
+                                        <button type="button" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600" onclick="document.getElementById('file-input').click();">
+                                            Selecione o arquivo
+                                        </button>
+                                        <input type="file" id="file-input" class="hidden" accept=".csv">
+                                        <p id="file-name" class="text-sm text-gray-700 mt-4 font-medium"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <button id="process-button" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition duration-300 disabled:bg-gray-400" disabled>
+                                    Processar Arquivo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="success-message" class="hidden-view text-center bg-white p-12 rounded-2xl shadow-lg max-w-3xl mx-auto">
+                     <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-check-circle text-5xl text-green-500"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Arquivo enviado com sucesso!</h2>
+                    <p class="text-gray-600">O processamento está sendo executado em segundo plano. Você receberá um e-mail com o resultado assim que for finalizado.</p>
+                     <button onclick="resetUploadForm()" class="mt-8 bg-gray-200 text-gray-700 font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition duration-300">
+                        Novo Lançamento
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tela de Histórico -->
+            <div id="history-view" class="hidden-view">
+                <div class="bg-white p-8 rounded-2xl shadow-lg">
+                    <!-- Filtros -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 pb-6 border-b">
+                        <div>
+                            <label for="filter-date" class="block text-sm font-medium text-gray-700 mb-1">Data de Lançamento</label>
+                             <input type="date" id="filter-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="filter-campaign-code" class="block text-sm font-medium text-gray-700 mb-1">Código da Campanha</label>
+                            <input type="text" id="filter-campaign-code" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Buscar por código...">
+                        </div>
+                        <div class="self-end">
+                             <button class="w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center">
+                                <i class="fas fa-filter mr-2"></i>
+                                Filtrar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tabela -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Data da Importação</th>
+                                    <th scope="col" class="px-6 py-3">Usuário</th>
+                                    <th scope="col" class="px-6 py-3">Código da Campanha</th>
+                                    <th scope="col" class="px-6 py-3">Nome do Arquivo</th>
+                                    <th scope="col" class="px-6 py-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Mock data -->
+                                <tr class="bg-white border-b hover:bg-gray-50">
+                                    <td class="px-6 py-4">15/10/2025 14:30</td>
+                                    <td class="px-6 py-4">fernanda.salmazzi@email.com</td>
+                                    <td class="px-6 py-4">OMNI_2025_C14</td>
+                                    <td class="px-6 py-4">bonificacao_vd_c14_final.csv</td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="text-blue-600 hover:text-blue-800"><i class="fas fa-download"></i> Download</button>
+                                    </td>
+                                </tr>
+                                <tr class="bg-white border-b hover:bg-gray-50">
+                                    <td class="px-6 py-4">10/10/2025 11:21</td>
+                                    <td class="px-6 py-4">flavio.vaisman@email.com</td>
+                                    <td class="px-6 py-4">POC_2025_C14_INCENTIVO</td>
+                                    <td class="px-6 py-4">incentivo_poc_franquias_sul.csv</td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="text-blue-600 hover:text-blue-800"><i class="fas fa-download"></i> Download</button>
+                                    </td>
+                                </tr>
+                                <tr class="bg-white border-b hover:bg-gray-50">
+                                    <td class="px-6 py-4">02/10/2025 09:05</td>
+                                    <td class="px-6 py-4">tiago.medeiros@email.com</td>
+                                    <td class="px-6 py-4">OMNI_2025_C13_AJUSTE</td>
+                                    <td class="px-6 py-4">ajuste_manual_bso_c13.csv</td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="text-blue-600 hover:text-blue-800"><i class="fas fa-download"></i> Download</button>
+                                    </td>
+                                </tr>
+                                 <tr class="bg-white border-b hover:bg-gray-50">
+                                    <td class="px-6 py-4">25/09/2025 17:45</td>
+                                    <td class="px-6 py-4">fernanda.salmazzi@email.com</td>
+                                    <td class="px-6 py-4">OMNI_2025_C13</td>
+                                    <td class="px-6 py-4">bonificacao_vd_c13_final.csv</td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="text-blue-600 hover:text-blue-800"><i class="fas fa-download"></i> Download</button>
+                                    </td>
+                                </tr>
+                                 <tr class="bg-white hover:bg-gray-50">
+                                    <td class="px-6 py-4">18/09/2025 16:10</td>
+                                    <td class="px-6 py-4">flavio.vaisman@email.com</td>
+                                    <td class="px-6 py-4">POC_2025_C13_LOJAS</td>
+                                    <td class="px-6 py-4">credito_poc_lojas_premium.csv</td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="text-blue-600 hover:text-blue-800"><i class="fas fa-download"></i> Download</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                     <!-- Paginação -->
+                    <div class="flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6 mt-6">
+                        <div class="flex flex-1 justify-between sm:hidden">
+                            <a href="#" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Anterior</a>
+                            <a href="#" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Próximo</a>
+                        </div>
+                        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700">
+                                    Mostrando
+                                    <span class="font-medium">1</span>
+                                    a
+                                    <span class="font-medium">5</span>
+                                    de
+                                    <span class="font-medium">23</span>
+                                    resultados
+                                </p>
+                            </div>
+                            <div>
+                                <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                                    <a href="#" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                                        <span class="sr-only">Anterior</span>
+                                        <i class="fas fa-chevron-left h-5 w-5"></i>
+                                    </a>
+                                    <a href="#" aria-current="page" class="relative z-10 inline-flex items-center bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">1</a>
+                                    <a href="#" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">2</a>
+                                    <a href="#" class="relative hidden items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 md:inline-flex">3</a>
+                                    <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">...</span>
+                                    <a href="#" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                                        <span class="sr-only">Próximo</span>
+                                        <i class="fas fa-chevron-right h-5 w-5"></i>
+                                    </a>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const navUpload = document.getElementById('nav-upload');
+        const navHistory = document.getElementById('nav-history');
+        const uploadView = document.getElementById('upload-view');
+        const historyView = document.getElementById('history-view');
+        const headerTitle = document.getElementById('header-title');
+
+        const uploadFormContainer = document.getElementById('upload-form-container');
+        const successMessage = document.getElementById('success-message');
+        const processButton = document.getElementById('process-button');
+        const fileInput = document.getElementById('file-input');
+        const fileNameDisplay = document.getElementById('file-name');
+
+        const dragArea = document.getElementById('drag-area');
+
+        function switchView(view) {
+            navUpload.classList.remove('active');
+            navHistory.classList.remove('active');
+            uploadView.classList.add('hidden-view');
+            historyView.classList.add('hidden-view');
+
+            if (view === 'upload') {
+                navUpload.classList.add('active');
+                uploadView.classList.remove('hidden-view');
+                headerTitle.textContent = 'Lançamento Manual de Bonificação';
+            } else if (view === 'history') {
+                navHistory.classList.add('active');
+                historyView.classList.remove('hidden-view');
+                headerTitle.textContent = 'Histórico de Lançamentos';
+            }
+        }
+        
+        function resetUploadForm() {
+            uploadFormContainer.classList.remove('hidden-view');
+            successMessage.classList.add('hidden-view');
+            document.getElementById('campaign-code').value = '';
+            document.getElementById('campaign-description').value = '';
+            fileInput.value = '';
+            fileNameDisplay.textContent = '';
+            processButton.disabled = true;
+        }
+
+        navUpload.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchView('upload');
+            resetUploadForm();
+        });
+
+        navHistory.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchView('history');
+        });
+
+        processButton.addEventListener('click', () => {
+            uploadFormContainer.classList.add('hidden-view');
+            successMessage.classList.remove('hidden-view');
+        });
+        
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect() {
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.textContent = fileInput.files[0].name;
+                processButton.disabled = false;
+            } else {
+                fileNameDisplay.textContent = '';
+                processButton.disabled = true;
+            }
+        }
+        
+        // Drag and Drop functionality
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dragArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dragArea.addEventListener(eventName, () => dragArea.classList.add('active'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dragArea.addEventListener(eventName, () => dragArea.classList.remove('active'), false);
+        });
+
+        dragArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            let dt = e.dataTransfer;
+            let files = dt.files;
+            fileInput.files = files;
+            handleFileSelect();
+        }
+
+        // Initialize with default view
+        switchView('upload');
+    </script>
+</body>
+</html>
