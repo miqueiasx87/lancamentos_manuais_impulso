@@ -3,335 +3,334 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Protótipo - Lançamentos Manuais de Bonificação</title>
+    <title>Protótipo - Lançamentos Manuais (Estável)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* Fundo cinza claro */
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .sidebar-link.active { background-color: #3b82f6; color: white; }
+        .sidebar-link.active i { color: white; }
+        .modal-overlay {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            background-color: rgba(0, 0, 0, 0.6);
         }
-        .sidebar {
-            transition: width 0.3s ease;
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
+        .modal-box {
+            transform: scale(0.95) translateY(10px);
+            transition: transform 0.3s ease;
         }
-        .sidebar-link.active {
-            background-color: #3b82f6; /* Azul */
-            color: white;
-        }
-        .sidebar-link.active i {
-            color: white;
-        }
-        .drag-area {
-            border: 2px dashed #d1d5db;
-        }
-        .drag-area.active {
-            border-color: #3b82f6;
-        }
-        .hidden-view {
-            display: none;
-        }
+        .modal-overlay.visible .modal-box { transform: scale(1) translateY(0); }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
+
     <!-- Sidebar -->
-    <aside class="sidebar bg-gray-800 text-white w-64 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition duration-200 ease-in-out">
+    <aside class="sidebar bg-gray-800 text-white w-64 space-y-6 py-7 px-2 flex-shrink-0">
         <a href="#" class="text-white flex items-center space-x-2 px-4">
             <i class="fas fa-rocket text-2xl"></i>
             <span class="text-2xl font-extrabold">Impulso</span>
         </a>
-
         <nav>
-            <a href="#" id="nav-upload" class="sidebar-link active flex items-center space-x-3 py-3 px-4 rounded-lg transition duration-150 hover:bg-gray-700">
-                <i class="fas fa-upload text-gray-400"></i>
-                <span>Novo Lançamento</span>
+            <a href="#campaigns" class="sidebar-link flex items-center space-x-3 py-3 px-4 rounded-lg">
+                <i class="fas fa-bullhorn text-gray-400"></i><span>Gestão de Campanhas</span>
             </a>
-            <a href="#" id="nav-history" class="sidebar-link flex items-center space-x-3 py-3 px-4 rounded-lg transition duration-150 hover:bg-gray-700">
-                <i class="fas fa-history text-gray-400"></i>
-                <span>Histórico</span>
+            <a href="#import" class="sidebar-link flex items-center space-x-3 py-3 px-4 rounded-lg">
+                <i class="fas fa-upload text-gray-400"></i><span>Importar Arquivo</span>
+            </a>
+            <a href="#history" class="sidebar-link flex items-center space-x-3 py-3 px-4 rounded-lg">
+                <i class="fas fa-history text-gray-400"></i><span>Lançamentos</span>
             </a>
         </nav>
     </aside>
 
-    <!-- Conteúdo Principal -->
+    <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
         <header class="bg-white shadow-sm p-4">
-            <h1 id="header-title" class="text-2xl font-bold text-gray-800">Lançamento Manual de Bonificação</h1>
+            <h1 id="header-title" class="text-2xl font-bold text-gray-800"></h1>
         </header>
-
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
-            <!-- Tela de Upload -->
-            <div id="upload-view">
-                <div id="upload-form-container">
-                    <div class="bg-white p-8 rounded-2xl shadow-lg max-w-4xl mx-auto">
-                        <div class="space-y-6">
-                            <div>
-                                <label for="campaign-code" class="block text-sm font-medium text-gray-700 mb-1">Código da Campanha</label>
-                                <input type="text" id="campaign-code" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: OMNI_2025_C15">
-                            </div>
-                            <div>
-                                <label for="campaign-description" class="block text-sm font-medium text-gray-700 mb-1">Descrição da Campanha</label>
-                                <textarea id="campaign-description" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Descreva o objetivo e as regras da campanha."></textarea>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Arquivo de Bonificação</label>
-                                <div id="drag-area" class="drag-area flex justify-center items-center w-full p-8 bg-gray-50 rounded-lg">
-                                    <div class="text-center">
-                                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
-                                        <p class="text-gray-600">Arraste e solte o arquivo .CSV aqui</p>
-                                        <p class="text-sm text-gray-500 my-2">ou</p>
-                                        <button type="button" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600" onclick="document.getElementById('file-input').click();">
-                                            Selecione o arquivo
-                                        </button>
-                                        <input type="file" id="file-input" class="hidden" accept=".csv">
-                                        <p id="file-name" class="text-sm text-gray-700 mt-4 font-medium"></p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <button id="process-button" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition duration-300 disabled:bg-gray-400" disabled>
-                                    Processar Arquivo
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="success-message" class="hidden-view text-center bg-white p-12 rounded-2xl shadow-lg max-w-3xl mx-auto">
-                     <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <i class="fas fa-check-circle text-5xl text-green-500"></i>
-                    </div>
-                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Arquivo enviado com sucesso!</h2>
-                    <p class="text-gray-600">O processamento está sendo executado em segundo plano. Você receberá um e-mail com o resultado assim que for finalizado.</p>
-                     <button onclick="resetUploadForm()" class="mt-8 bg-gray-200 text-gray-700 font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition duration-300">
-                        Novo Lançamento
-                    </button>
-                </div>
-            </div>
-
-            <!-- Tela de Histórico -->
-            <div id="history-view" class="hidden-view">
-                <div class="bg-white p-8 rounded-2xl shadow-lg">
-                    <!-- Filtros -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 pb-6 border-b">
-                        <div>
-                            <label for="filter-date" class="block text-sm font-medium text-gray-700 mb-1">Data de Lançamento</label>
-                             <input type="date" id="filter-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label for="filter-campaign-code" class="block text-sm font-medium text-gray-700 mb-1">Código da Campanha</label>
-                            <input type="text" id="filter-campaign-code" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Buscar por código...">
-                        </div>
-                        <div class="self-end">
-                             <button class="w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center">
-                                <i class="fas fa-filter mr-2"></i>
-                                Filtrar
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Tabela -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left text-gray-500">
-                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3">Data da Importação</th>
-                                    <th scope="col" class="px-6 py-3">Usuário</th>
-                                    <th scope="col" class="px-6 py-3">Código da Campanha</th>
-                                    <th scope="col" class="px-6 py-3">Nome do Arquivo</th>
-                                    <th scope="col" class="px-6 py-3 text-center">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Mock data -->
-                                <tr class="bg-white border-b hover:bg-gray-50">
-                                    <td class="px-6 py-4">15/10/2025 14:30</td>
-                                    <td class="px-6 py-4">fernanda.salmazzi@email.com</td>
-                                    <td class="px-6 py-4">OMNI_2025_C14</td>
-                                    <td class="px-6 py-4">bonificacao_vd_c14_final.csv</td>
-                                    <td class="px-6 py-4 text-center">
-                                        <button class="text-blue-600 hover:text-blue-800"><i class="fas fa-download"></i> Download</button>
-                                    </td>
-                                </tr>
-                                <tr class="bg-white border-b hover:bg-gray-50">
-                                    <td class="px-6 py-4">10/10/2025 11:21</td>
-                                    <td class="px-6 py-4">flavio.vaisman@email.com</td>
-                                    <td class="px-6 py-4">POC_2025_C14_INCENTIVO</td>
-                                    <td class="px-6 py-4">incentivo_poc_franquias_sul.csv</td>
-                                    <td class="px-6 py-4 text-center">
-                                        <button class="text-blue-600 hover:text-blue-800"><i class="fas fa-download"></i> Download</button>
-                                    </td>
-                                </tr>
-                                <tr class="bg-white border-b hover:bg-gray-50">
-                                    <td class="px-6 py-4">02/10/2025 09:05</td>
-                                    <td class="px-6 py-4">tiago.medeiros@email.com</td>
-                                    <td class="px-6 py-4">OMNI_2025_C13_AJUSTE</td>
-                                    <td class="px-6 py-4">ajuste_manual_bso_c13.csv</td>
-                                    <td class="px-6 py-4 text-center">
-                                        <button class="text-blue-600 hover:text-blue-800"><i class="fas fa-download"></i> Download</button>
-                                    </td>
-                                </tr>
-                                 <tr class="bg-white border-b hover:bg-gray-50">
-                                    <td class="px-6 py-4">25/09/2025 17:45</td>
-                                    <td class="px-6 py-4">fernanda.salmazzi@email.com</td>
-                                    <td class="px-6 py-4">OMNI_2025_C13</td>
-                                    <td class="px-6 py-4">bonificacao_vd_c13_final.csv</td>
-                                    <td class="px-6 py-4 text-center">
-                                        <button class="text-blue-600 hover:text-blue-800"><i class="fas fa-download"></i> Download</button>
-                                    </td>
-                                </tr>
-                                 <tr class="bg-white hover:bg-gray-50">
-                                    <td class="px-6 py-4">18/09/2025 16:10</td>
-                                    <td class="px-6 py-4">flavio.vaisman@email.com</td>
-                                    <td class="px-6 py-4">POC_2025_C13_LOJAS</td>
-                                    <td class="px-6 py-4">credito_poc_lojas_premium.csv</td>
-                                    <td class="px-6 py-4 text-center">
-                                        <button class="text-blue-600 hover:text-blue-800"><i class="fas fa-download"></i> Download</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                     <!-- Paginação -->
-                    <div class="flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6 mt-6">
-                        <div class="flex flex-1 justify-between sm:hidden">
-                            <a href="#" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Anterior</a>
-                            <a href="#" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Próximo</a>
-                        </div>
-                        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                            <div>
-                                <p class="text-sm text-gray-700">
-                                    Mostrando
-                                    <span class="font-medium">1</span>
-                                    a
-                                    <span class="font-medium">5</span>
-                                    de
-                                    <span class="font-medium">23</span>
-                                    resultados
-                                </p>
-                            </div>
-                            <div>
-                                <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                                    <a href="#" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
-                                        <span class="sr-only">Anterior</span>
-                                        <i class="fas fa-chevron-left h-5 w-5"></i>
-                                    </a>
-                                    <a href="#" aria-current="page" class="relative z-10 inline-flex items-center bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">1</a>
-                                    <a href="#" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">2</a>
-                                    <a href="#" class="relative hidden items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 md:inline-flex">3</a>
-                                    <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">...</span>
-                                    <a href="#" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
-                                        <span class="sr-only">Próximo</span>
-                                        <i class="fas fa-chevron-right h-5 w-5"></i>
-                                    </a>
-                                </nav>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <div id="app-content"></div>
         </main>
     </div>
 
+    <!-- Modals (kept outside the main app structure for clean management) -->
+    <div id="campaign-modal" class="modal-overlay fixed inset-0 z-40 flex items-center justify-center p-4">
+        <div class="modal-box bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl">
+            <!-- Campaign form content will be injected here -->
+        </div>
+    </div>
+    <div id="confirmation-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="modal-box bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
+            <!-- Confirmation content will be injected here -->
+        </div>
+    </div>
+
     <script>
-        const navUpload = document.getElementById('nav-upload');
-        const navHistory = document.getElementById('nav-history');
-        const uploadView = document.getElementById('upload-view');
-        const historyView = document.getElementById('history-view');
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- STATE MANAGEMENT ---
+        const state = {
+            campaigns: [
+                { id: 1, name: 'C1325_BONUS_FRANQUIA', description: '2025/C13-Bonificação especial para franquias do Sul', type: 'Política Comercial (POC)', channel: 'LOJA', startDate: '2025-10-01', endDate: '2025-10-15' },
+                { id: 2, name: 'C1425_APURACAO_VD', description: '2025/C14-Apuração manual de vendas diretas', type: 'Apuração', channel: 'VD', startDate: '2025-10-16', endDate: '2025-10-31' },
+            ],
+            imports: [
+                { id: 1, date: '2025-10-20T14:30:00', campaignId: 1, importedBy: 'fernanda.salmazzi@email.com', approver: 'flavio.vaisman@email.com', status: 'approved' },
+                { id: 2, date: '2025-10-21T09:15:00', campaignId: 2, importedBy: 'tiago.medeiros@email.com', approver: null, status: 'pending' },
+                { id: 3, date: '2025-10-18T11:00:00', campaignId: 1, importedBy: 'fernanda.salmazzi@email.com', approver: 'flavio.vaisman@email.com', status: 'rejected' },
+            ],
+            nextCampaignId: 3,
+            nextImportId: 4,
+            currentUser: "aprovador.final@email.com",
+        };
+
+        // --- DOM ELEMENTS ---
+        const appContent = document.getElementById('app-content');
         const headerTitle = document.getElementById('header-title');
+        const campaignModalEl = document.getElementById('campaign-modal');
+        const confirmationModalEl = document.getElementById('confirmation-modal');
 
-        const uploadFormContainer = document.getElementById('upload-form-container');
-        const successMessage = document.getElementById('success-message');
-        const processButton = document.getElementById('process-button');
-        const fileInput = document.getElementById('file-input');
-        const fileNameDisplay = document.getElementById('file-name');
-
-        const dragArea = document.getElementById('drag-area');
-
-        function switchView(view) {
-            navUpload.classList.remove('active');
-            navHistory.classList.remove('active');
-            uploadView.classList.add('hidden-view');
-            historyView.classList.add('hidden-view');
-
-            if (view === 'upload') {
-                navUpload.classList.add('active');
-                uploadView.classList.remove('hidden-view');
-                headerTitle.textContent = 'Lançamento Manual de Bonificação';
-            } else if (view === 'history') {
-                navHistory.classList.add('active');
-                historyView.classList.remove('hidden-view');
-                headerTitle.textContent = 'Histórico de Lançamentos';
+        // --- TEMPLATES ---
+        const templates = {
+            campaigns: () => `
+                <div class="bg-white p-8 rounded-2xl shadow-lg max-w-6xl mx-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">Campanhas Cadastradas</h2>
+                        <button id="add-campaign-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700"><i class="fas fa-plus mr-2"></i>Nova Campanha</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>${['Campanha', 'Descrição', 'Tipo', 'Período', 'Canal', 'Ações'].map(h => `<th class="px-6 py-3 ${h === 'Ações' ? 'text-center' : ''}">${h}</th>`).join('')}</tr>
+                            </thead>
+                            <tbody id="campaign-table-body">
+                                ${state.campaigns.map(c => `
+                                    <tr class="bg-white border-b hover:bg-gray-50">
+                                        <td class="px-6 py-4 font-medium text-gray-900">${c.name}</td>
+                                        <td class="px-6 py-4">${c.description}</td>
+                                        <td class="px-6 py-4">${c.type}</td>
+                                        <td class="px-6 py-4">${new Date(c.startDate+'T00:00:00').toLocaleDateString()} - ${new Date(c.endDate+'T00:00:00').toLocaleDateString()}</td>
+                                        <td class="px-6 py-4">${c.channel}</td>
+                                        <td class="px-6 py-4 text-center space-x-2">
+                                            <button class="text-blue-600 hover:text-blue-800 edit-campaign-btn" data-id="${c.id}"><i class="fas fa-edit"></i></button>
+                                            <button class="text-red-600 hover:text-red-800 delete-campaign-btn" data-id="${c.id}"><i class="fas fa-trash"></i></button>
+                                        </td>
+                                    </tr>`).join('') || `<tr><td colspan="6" class="text-center py-8 text-gray-500">Nenhuma campanha cadastrada.</td></tr>`}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`,
+            import: () => `
+                <div id="import-form-container" class="bg-white p-8 rounded-2xl shadow-lg max-w-4xl mx-auto">
+                    <div class="space-y-6">
+                        <div>
+                            <label for="campaign-select" class="block text-sm font-medium text-gray-700 mb-1">Selecione a Campanha</label>
+                            <select id="campaign-select" class="w-full px-4 py-2 border border-gray-300 rounded-lg">${state.campaigns.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Arquivo de Bonificação (.csv)</label>
+                            <div id="drag-area" class="flex justify-center items-center w-full p-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300"><div class="text-center"><i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i><p class="text-gray-600">Arraste e solte o arquivo aqui</p><p class="text-sm text-gray-500 my-2">ou</p><button type="button" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600" onclick="document.getElementById('file-input').click();">Selecione o arquivo</button><input type="file" id="file-input" class="hidden" accept=".csv"><p id="file-name" class="text-sm text-gray-700 mt-4 font-medium"></p></div></div>
+                        </div>
+                        <div class="text-right"><button id="process-button" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 disabled:bg-gray-400" disabled>Processar Arquivo</button></div>
+                    </div>
+                </div>
+                <div id="import-success-message" style="display: none;" class="text-center bg-white p-12 rounded-2xl shadow-lg max-w-3xl mx-auto"><div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"><i class="fas fa-check-circle text-5xl text-green-500"></i></div><h2 class="text-2xl font-bold text-gray-800 mb-2">Arquivo enviado com sucesso!</h2><p class="text-gray-600">O processamento está sendo executado em segundo plano. O lançamento aguarda aprovação.</p><a href="#history" class="mt-8 inline-block bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">Ver Lançamentos</a></div>`,
+            history: () => {
+                const statusMap = {
+                    pending: '<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Pendente</span>',
+                    approved: '<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Aprovado</span>',
+                    rejected: '<span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Rejeitado</span>'
+                };
+                return `
+                <div class="bg-white p-8 rounded-2xl shadow-lg">
+                    <!-- Filters here -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>${['Data', 'Campanha', 'Importado por', 'Aprovador', 'Situação', 'Ações'].map(h => `<th class="px-6 py-3 ${['Situação', 'Ações'].includes(h) ? 'text-center' : ''}">${h}</th>`).join('')}</tr>
+                            </thead>
+                            <tbody>
+                                ${[...state.imports].sort((a,b) => new Date(b.date) - new Date(a.date)).map(i => {
+                                    const campaign = state.campaigns.find(c => c.id === i.campaignId);
+                                    return `
+                                    <tr class="bg-white border-b hover:bg-gray-50">
+                                        <td class="px-6 py-4">${new Date(i.date).toLocaleString()}</td>
+                                        <td class="px-6 py-4 font-medium text-gray-900">${campaign ? campaign.name : 'N/A'}</td>
+                                        <td class="px-6 py-4">${i.importedBy}</td>
+                                        <td class="px-6 py-4">${i.approver || '---'}</td>
+                                        <td class="px-6 py-4 text-center">${statusMap[i.status]}</td>
+                                        <td class="px-6 py-4 text-center space-x-2">
+                                            ${i.status === 'pending' ? `
+                                            <button class="text-green-600 hover:text-green-800 approve-btn" data-id="${i.id}" title="Aprovar"><i class="fas fa-check-circle"></i></button>
+                                            <button class="text-red-600 hover:text-red-800 reject-btn" data-id="${i.id}" title="Rejeitar"><i class="fas fa-times-circle"></i></button>
+                                            ` : ''}
+                                            <button class="text-blue-600 hover:text-blue-800" title="Download"><i class="fas fa-download"></i></button>
+                                        </td>
+                                    </tr>`}).join('') || `<tr><td colspan="6" class="text-center py-8 text-gray-500">Nenhum lançamento encontrado.</td></tr>`}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
             }
-        }
+        };
+
+        // --- ROUTER & RENDER ---
+        const routes = {
+            '#campaigns': { template: templates.campaigns, title: 'Gestão de Campanhas' },
+            '#import': { template: templates.import, title: 'Importar Arquivo de Bonificação' },
+            '#history': { template: templates.history, title: 'Histórico de Lançamentos' },
+        };
+
+        const render = (path) => {
+            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+            const activeLink = document.querySelector(`.sidebar-link[href="${path}"]`);
+            if (activeLink) activeLink.classList.add('active');
+
+            const route = routes[path] || routes['#campaigns'];
+            headerTitle.textContent = route.title;
+            appContent.innerHTML = route.template();
+            addEventListenersForPage(path);
+        };
         
-        function resetUploadForm() {
-            uploadFormContainer.classList.remove('hidden-view');
-            successMessage.classList.add('hidden-view');
-            document.getElementById('campaign-code').value = '';
-            document.getElementById('campaign-description').value = '';
-            fileInput.value = '';
-            fileNameDisplay.textContent = '';
-            processButton.disabled = true;
-        }
+        const handleRouteChange = () => {
+            const path = window.location.hash || '#campaigns';
+            render(path);
+        };
 
-        navUpload.addEventListener('click', (e) => {
-            e.preventDefault();
-            switchView('upload');
-            resetUploadForm();
-        });
+        // --- MODAL MANAGEMENT (REBUILT) ---
+        const closeModal = () => {
+            campaignModalEl.classList.remove('visible');
+            confirmationModalEl.classList.remove('visible');
+        };
 
-        navHistory.addEventListener('click', (e) => {
-            e.preventDefault();
-            switchView('history');
-        });
+        const openModal = (modalEl, content) => {
+            closeModal(); // Ensure no other modals are open
+            modalEl.querySelector('.modal-box').innerHTML = content;
+            modalEl.classList.add('visible');
+            // Add listeners for closing
+            modalEl.querySelector('.cancel-btn')?.addEventListener('click', closeModal);
+            modalEl.addEventListener('click', (e) => { if (e.target === modalEl) closeModal(); });
+        };
 
-        processButton.addEventListener('click', () => {
-            uploadFormContainer.classList.add('hidden-view');
-            successMessage.classList.remove('hidden-view');
-        });
-        
-        fileInput.addEventListener('change', handleFileSelect);
-
-        function handleFileSelect() {
-            if (fileInput.files.length > 0) {
-                fileNameDisplay.textContent = fileInput.files[0].name;
-                processButton.disabled = false;
+        // --- EVENT HANDLERS & LOGIC ---
+        const handleCampaignSave = (form, campaignId) => {
+            const campaignData = {
+                name: form.querySelector('#campaign-name').value,
+                description: form.querySelector('#campaign-desc').value,
+                type: form.querySelector('#campaign-type').value,
+                channel: form.querySelector('#campaign-channel').value,
+                startDate: form.querySelector('#campaign-start-date').value,
+                endDate: form.querySelector('#campaign-end-date').value,
+            };
+            if (campaignId) {
+                const index = state.campaigns.findIndex(c => c.id == campaignId);
+                state.campaigns[index] = { ...state.campaigns[index], ...campaignData };
             } else {
-                fileNameDisplay.textContent = '';
-                processButton.disabled = true;
+                state.campaigns.push({ id: state.nextCampaignId++, ...campaignData });
             }
-        }
+            closeModal();
+            render('#campaigns');
+        };
         
-        // Drag and Drop functionality
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dragArea.addEventListener(eventName, preventDefaults, false);
-        });
+        const openCampaignForm = (campaignId = null) => {
+            const campaign = campaignId ? state.campaigns.find(c => c.id === campaignId) : {};
+            const title = campaignId ? 'Editar Campanha' : 'Nova Campanha';
+            const formContent = `
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">${title}</h2>
+                <form id="campaign-form" class="space-y-4">
+                    <input type="hidden" id="campaign-id-input" value="${campaign.id || ''}">
+                    <div><label for="campaign-name">Campanha (Código)</label><input type="text" id="campaign-name" value="${campaign.name || ''}" class="mt-1 w-full p-2 border rounded" required></div>
+                    <div><label for="campaign-desc">Descrição</label><textarea id="campaign-desc" rows="3" class="mt-1 w-full p-2 border rounded" required>${campaign.description || ''}</textarea></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label for="campaign-type">Tipo</label><select id="campaign-type" class="mt-1 w-full p-2 border rounded"><option value="Apuração" ${campaign.type === 'Apuração' ? 'selected' : ''}>Apuração</option><option value="Política Comercial (POC)" ${campaign.type === 'Política Comercial (POC)' ? 'selected' : ''}>POC</option></select></div>
+                        <div><label for="campaign-channel">Canal</label><select id="campaign-channel" class="mt-1 w-full p-2 border rounded"><option value="VD" ${campaign.channel === 'VD' ? 'selected' : ''}>VD</option><option value="LOJA" ${campaign.channel === 'LOJA' ? 'selected' : ''}>LOJA</option></select></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label for="campaign-start-date">Data Início</label><input type="date" id="campaign-start-date" value="${campaign.startDate || ''}" class="mt-1 w-full p-2 border rounded" required></div>
+                        <div><label for="campaign-end-date">Data Fim</label><input type="date" id="campaign-end-date" value="${campaign.endDate || ''}" class="mt-1 w-full p-2 border rounded" required></div>
+                    </div>
+                    <div class="flex justify-end pt-4 space-x-3"><button type="button" class="cancel-btn bg-gray-200 py-2 px-6 rounded-lg">Cancelar</button><button type="submit" class="bg-blue-600 text-white py-2 px-6 rounded-lg">Salvar</button></div>
+                </form>`;
+            openModal(campaignModalEl, formContent);
+            campaignModalEl.querySelector('#campaign-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                handleCampaignSave(e.target, campaign.id);
+            });
+        };
 
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
+        const openConfirmation = (config) => {
+            const content = `
+                <h2 class="text-xl font-bold text-gray-800 mb-4">${config.title}</h2>
+                <p class="text-gray-600 mb-8">${config.message}</p>
+                <div class="flex justify-center space-x-4">
+                    <button class="cancel-btn bg-gray-200 font-bold py-2 px-6 rounded-lg">Cancelar</button>
+                    <button id="confirm-action-btn" class="${config.confirmClass} text-white font-bold py-2 px-6 rounded-lg">${config.confirmText}</button>
+                </div>`;
+            openModal(confirmationModalEl, content);
+            confirmationModalEl.querySelector('#confirm-action-btn').addEventListener('click', () => {
+                config.onConfirm();
+                closeModal();
+            });
+        };
 
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dragArea.addEventListener(eventName, () => dragArea.classList.add('active'), false);
-        });
+        const addEventListenersForPage = (path) => {
+            if (path === '#campaigns') {
+                document.getElementById('add-campaign-btn').addEventListener('click', () => openCampaignForm());
+                document.querySelectorAll('.edit-campaign-btn').forEach(b => b.addEventListener('click', (e) => openCampaignForm(parseInt(e.currentTarget.dataset.id))));
+                document.querySelectorAll('.delete-campaign-btn').forEach(b => b.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.dataset.id);
+                    openConfirmation({
+                        title: 'Excluir Campanha', message: 'Tem certeza que deseja EXCLUIR esta campanha?', confirmText: 'Excluir', confirmClass: 'bg-red-600',
+                        onConfirm: () => {
+                            state.campaigns = state.campaigns.filter(c => c.id !== id);
+                            render('#campaigns');
+                        }
+                    });
+                }));
+            }
+            if (path === '#import') {
+                const fileInput = document.getElementById('file-input');
+                const processBtn = document.getElementById('process-button');
+                fileInput.addEventListener('change', () => {
+                    if (fileInput.files.length > 0) {
+                        document.getElementById('file-name').textContent = fileInput.files[0].name;
+                        processBtn.disabled = false;
+                    }
+                });
+                processBtn.addEventListener('click', () => {
+                    state.imports.push({ id: state.nextImportId++, date: new Date().toISOString(), campaignId: parseInt(document.getElementById('campaign-select').value), importedBy: 'importer.user@email.com', approver: null, status: 'pending' });
+                    document.getElementById('import-form-container').style.display = 'none';
+                    document.getElementById('import-success-message').style.display = 'block';
+                });
+            }
+            if (path === '#history') {
+                document.querySelectorAll('.approve-btn, .reject-btn').forEach(b => b.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.dataset.id);
+                    const isApprove = e.currentTarget.classList.contains('approve-btn');
+                    openConfirmation({
+                        title: isApprove ? 'Aprovar Lançamento' : 'Rejeitar Lançamento',
+                        message: `Tem certeza que deseja ${isApprove ? 'APROVAR' : 'REJEITAR'} este lançamento?`,
+                        confirmText: isApprove ? 'Aprovar' : 'Rejeitar',
+                        confirmClass: isApprove ? 'bg-green-600' : 'bg-red-600',
+                        onConfirm: () => {
+                            const imp = state.imports.find(i => i.id === id);
+                            if (imp) {
+                                imp.status = isApprove ? 'approved' : 'rejected';
+                                imp.approver = state.currentUser;
+                            }
+                            render('#history');
+                        }
+                    });
+                }));
+            }
+        };
 
-        ['dragleave', 'drop'].forEach(eventName => {
-            dragArea.addEventListener(eventName, () => dragArea.classList.remove('active'), false);
-        });
-
-        dragArea.addEventListener('drop', handleDrop, false);
-
-        function handleDrop(e) {
-            let dt = e.dataTransfer;
-            let files = dt.files;
-            fileInput.files = files;
-            handleFileSelect();
-        }
-
-        // Initialize with default view
-        switchView('upload');
+        // --- INITIALIZATION ---
+        window.addEventListener('hashchange', handleRouteChange);
+        handleRouteChange(); // Render initial page
+    });
     </script>
 </body>
 </html>
